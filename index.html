@@ -3,6 +3,42 @@
   <head>
     <title>Udacity Map</title>
     <style>
+      .header {
+        background-color: #000;
+      }
+
+      .input {
+          padding: .5em;
+          width: 100%;
+      }
+
+      .menu {
+        height: 100%;
+        width: 300px;
+        position: fixed;
+        top: 28px;
+        padding-top: 1px;
+        left: 0;
+        background-color: rgba(0, 0, 0, 0.96);
+        /* Hide the menu contents when it slides out of view */
+        overflow-x: hidden;
+        /* Slide transition effect */
+        transition: 0.5s;
+      }
+
+      .menu li {
+        font-size: 15px;
+        padding: 1em 0;
+        display: block;
+        color: #818181;
+        transition: 0.3s;
+      }
+
+      .menu li:hover, .offcanvas li:focus{
+        color: #f1f1f1;
+      }
+
+      /* Generic styling for Google Map */
       html, body {
         font-family: Arial, sans-serif;
         height: 100%;
@@ -17,15 +53,19 @@
   </head>
   <body>
     <div class="header">
-
+      <a href="#">
+        <img id="nav-icon" data-bind="click: menuToggled ? closeNav : openNav" src="img/ic_menu_white_24px.svg" alt="Hamburger Menu">
+      </a>
     </div>
-    <div>
-      <input data-bind="textInput: searchName" type="text" placeholder="Filter...">
-    </div>
-    <ul data-bind="foreach: filteredList">
-      <li data-bind="text: title, click: $parent.selectMarker"></li>
-    </ul>
     <div id="map"></div>
+    <div id="nav" class="menu">
+      <div>
+        <input data-bind="textInput: searchName" class="input" type="text" placeholder="Filter...">
+      </div>
+      <ul data-bind="foreach: filteredList">
+        <li data-bind="text: title, click: $parent.selectMarker"></li>
+      </ul>
+    </div>
     <script src="js/lib/jquery-2.2.4.min.js"></script>
     <script src="js/lib/knockout-3.4.1.js"></script>
     <script src="js/map.js"></script>

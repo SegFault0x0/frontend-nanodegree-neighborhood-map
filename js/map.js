@@ -1,5 +1,7 @@
 'use strict';
 
+var MENU_WIDTH = 300;
+
 var wikiElem;
 var map;
 var infoWindow;
@@ -48,19 +50,6 @@ var locations = [
 ];
 
 /**
- * Iterates through the marker array and returns an array of the location titles.
- * @param {google.maps.Marker} markerArray
- * @return {String[]} array
- */
-// var getMarkerNames = function(markerArray) {
-//     var array = [];
-//     for (var i = 0, len = markerArray.length; i < len; ++i) {
-//         array.push(markerArray[i].title);
-//     }
-//     return array;
-// };
-
-/**
  * Serves as KnockoutJS's `Controller`.
  */
 var ViewModel = function() {
@@ -76,8 +65,8 @@ var ViewModel = function() {
     // Create a two-way binding for the search feature
     this.searchName = ko.observable('');
 
-    // Create an array of marker titles
-    // this.titles = [];
+    // Keep track of menu toggle status
+    this.menuToggled = ko.observable(true);
 
     // Keep track of the selected marker
     this.currentMarker = ko.observable(this.places()[0]);
@@ -110,7 +99,7 @@ var ViewModel = function() {
         var filter = self.searchName().toLowerCase();
 
         if (!filter) {
-            //TODO:  Reset markers upon clearing the filter
+            // Re-display markers upon clearing the filter
             displayMarkers(self.places());
             return self.places();
         } else {
@@ -128,6 +117,22 @@ var ViewModel = function() {
             );
         }
     }, this);
+
+    /**
+     * Slides the navigation menu open to the right.
+     */
+    this.openNav = function() {
+        document.getElementById("nav").style.width = MENU_WIDTH + 'px';
+        self.menuToggled = true;
+    }
+
+    /**
+     * Slides the navigation menu closed to the left.
+     */
+    this.closeNav = function() {
+        document.getElementById("nav").style.width = "0";
+        self.menuToggled = false;
+    }
 };
 
 /**
@@ -194,6 +199,9 @@ var initMap = function() {
             lat: 40.7413549,
             lng: -73.9980244
         },
+        mapTypeControlOptions: {
+            position: google.maps.ControlPosition.TOP_RIGHT,
+        },
         zoom: 13
     });
 
@@ -254,7 +262,6 @@ var initMap = function() {
         // Force a map/marker redraw
         map.fitBounds(bounds);
     };
-
 };
 
 // Activate KnockoutJS
