@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <title>Udacity Map</title>
     <style>
       html, body {
         font-family: Arial, sans-serif;
@@ -15,6 +16,9 @@
     </style>
   </head>
   <body>
+    <ul data-bind="foreach: places">
+      <li data-bind="text: title, click: $parent.selectMarker"></li>
+    </ul>
     <div id="map"></div>
     <script src="js/lib/jquery-2.2.4.min.js"></script>
     <script src="js/lib/knockout-3.4.1.js"></script>
