@@ -1,7 +1,11 @@
 'use strict';
 
 var wikiElem;
+var map;
 var infoWindow;
+
+var displayMarkers = function() {};
+var toggleBouncing = function() {};
 
 /*** MODEL DATA ***/
 var markers = ko.observableArray([]);
@@ -69,6 +73,9 @@ var ViewModel = function() {
     // Create the array of locations
     this.places = markers;
 
+    // Create a two-way binding for the search feature
+    this.searchName = ko.observable('');
+
     // Create an array of marker titles
     // this.titles = [];
 
@@ -99,26 +106,29 @@ var ViewModel = function() {
         return filteredArray;
     };
 
-    // Create a two-way binding for the search feature
-    this.searchName = ko.observable('');
-
     this.filteredList = ko.computed(function() {
-        var filteredList = [];
         var filter = self.searchName().toLowerCase();
-        // self.titles = getMarkerNames(self.places());
 
         if (!filter) {
+            //TODO:  Reset markers upon clearing the filter
+            displayMarkers(self.places());
             return self.places();
         } else {
             return (
+                // This will return a new, filtered marker list
                 self.arrayFilter(self.places(), function(marker) {
-                    return marker.title.toLowerCase().startsWith(filter);
+                    // Return true or false whether the filter matches the title
+                    if (!marker.title.toLowerCase().startsWith(filter)) {
+                        marker.setMap(null);
+                        return false;
+                    } else {
+                        return true;
+                    }
                 })
             );
         }
     }, this);
 };
-
 
 /**
  * Retrieves a tidbit of general information about a location from Wikipedia.
@@ -171,16 +181,6 @@ var populateInfoWindow = function(marker, markerWindow) {
     }
 };
 
-/**
- * Enable/Disables the bouncing animation for a marker.
- */
-var toggleBouncing = function(marker) {
-    if (marker.getAnimation() !== null) {
-        marker.setAnimation(null);
-    } else {
-        marker.setAnimation(google.maps.Animation.BOUNCE);
-    }
-};
 
 /**
  * Creates the map, markers, and all basic map functionality
@@ -189,7 +189,7 @@ var initMap = function() {
     var marker;
 
     // Create the map
-    var map = new google.maps.Map(document.getElementById('map'), {
+    map = new google.maps.Map(document.getElementById('map'), {
         center: {
             lat: 40.7413549,
             lng: -73.9980244
@@ -225,6 +225,35 @@ var initMap = function() {
         // Add marker to Observable markers array
         markers.push(marker);
     }
+
+    /**
+     * Enable/Disables the bouncing animation for a marker.
+     * @param {google.maps.Marker} marker
+     */
+    toggleBouncing = function(marker) {
+        if (marker.getAnimation() !== null) {
+            marker.setAnimation(null);
+        } else {
+            marker.setAnimation(google.maps.Animation.BOUNCE);
+        }
+    };
+
+    /**
+     * Shows markers on the map and resize map boundaries around them.
+     * @param {google.maps.Marker[]} markerArray
+     */
+    displayMarkers = function(markerArray) {
+        var bounds = new google.maps.LatLngBounds();
+
+        // Extend the boundaries of the map for each marker
+        for (var i = 0, len = markerArray.length; i < len; ++i) {
+            markerArray[i].setMap(map);
+            bounds.extend(markerArray[i].position);
+        }
+
+        // Force a map/marker redraw
+        map.fitBounds(bounds);
+    };
 
 };
 
