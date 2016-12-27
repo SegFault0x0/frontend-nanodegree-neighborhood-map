@@ -1,4 +1,16 @@
 'use strict';
+/**
+ * @author Justin D
+ * @date 12/27/2016
+ * @purpose Udacity Neighborhood Map project
+ *
+ * This project utilizes the [Google Maps Javascript API]
+ * (https://developers.google.com/maps/documentation/javascript/reference) to
+ * display a map detailing points of interest in a certain area. The user can
+ * click any of the representative markers for information about that point.
+ * Marker information is provided by the [Wikipedia API]
+ * (https://www.mediawiki.org/wiki/API:Main_page).
+ */
 
 var MENU_WIDTH = 300;
 
@@ -13,8 +25,7 @@ var toggleBouncing = function() {};
 var markers = ko.observableArray();
 
 // Keep track of the Wikipedia data when it arrives
-var wikiData = ko.observableArray();
-
+var wikiData = [];
 
 var locations = [
     {
@@ -23,7 +34,6 @@ var locations = [
             lat: 40.7713024,
             lng: -73.9632393
         },
-        wikiInfo: ko.observable(''),
     },
     {
         title: 'Starbucks',
@@ -31,15 +41,14 @@ var locations = [
             lat: 40.7444883,
             lng: -73.9949465
         },
-        wikiInfo: ko.observable(''),
     },
     {
-        title: 'East Village Hip Studio',
+        title: 'Empire State Building',
         location: {
-            lat: 40.7281777,
-            lng: -73.984377
+
+            lat: 40.756124,
+            lng: -73.986669
         },
-        wikiInfo: ko.observable(''),
     },
     {
         title: 'TriBeCa Artsy Bachelor Pad',
@@ -47,22 +56,15 @@ var locations = [
             lat: 40.7195264,
             lng: -74.0089934
         },
-        wikiInfo: ko.observable(''),
     },
     {
-        title: 'Starry Night Pavilion',
+        title: 'Strand Bookstore',
         location: {
             lat: 40.7347062,
             lng: -73.9895759
         },
-        wikiInfo: ko.observable(''),
     },
 ];
-
-// Initialize wikiData
-for (var i = 0, len = locations.length; i < len; ++i) {
-    wikiData.push({wikiInfo: ''});
-}
 
 /**
  * Retrieves a tidbit of general information about a location from Wikipedia.
@@ -81,14 +83,17 @@ var getWikiData = function(index, title) {
          * The third index of the array contains the information, and the best
          * match on the search term is likely the first sub-index.
          */
+        console.log('response: ' + response);
         var wikiInfo = response[2][0];
 
-        // Update the current marker's Wikipedia information
-        wikiData.splice(index, 0, wikiInfo);
-        console.log(wikiData()[index]);
+        /**
+         * Update the correct index of the wikiData array with the current
+         * marker's Wikipedia information.
+         */
+        wikiData[index] = wikiInfo;
     }).fail((err) => {
         console.log(err);
-        marker.wikiData() = 'No Wikipedia data available.';
+        marker.wikiData[index] = 'No Wikipedia data available.';
     });
 };
 
@@ -112,7 +117,10 @@ var ViewModel = function() {
     this.menuToggled = ko.observable(true);
 
 
-    // Create function to engage the marker
+    /**
+     * Engages the marker as if it were clicked.
+     * @param {google.maps.Marker} clickedMarker
+     */
     this.selectMarker = function(clickedMarker) {
         toggleBouncing(clickedMarker);
         populateInfoWindow(clickedMarker, infoWindow);
@@ -135,6 +143,11 @@ var ViewModel = function() {
         return filteredArray;
     };
 
+    /**
+     * Performs a text-based filter on a marker's title/name and returns a new
+     * array with a filtered subset of values.
+     * @return {Array}
+     */
     this.filteredList = ko.computed(function() {
         var filter = self.searchName().toLowerCase();
 
@@ -159,7 +172,7 @@ var ViewModel = function() {
     }, this);
 
     /**
-     * Slides the navigation menu open to the right.
+     * Slides the navigation menu open (right).
      */
     this.openNav = function() {
         document.getElementById("nav").style.width = MENU_WIDTH + 'px';
@@ -167,7 +180,7 @@ var ViewModel = function() {
     }
 
     /**
-     * Slides the navigation menu closed to the left.
+     * Slides the navigation menu closed (left).
      */
     this.closeNav = function() {
         document.getElementById("nav").style.width = "0";
@@ -184,12 +197,17 @@ var populateInfoWindow = function(marker, markerWindow) {
     // Don't open another markerWindow if one is already opened.
     if (markerWindow.marker != marker) {
         markerWindow.marker = marker;
+        var info = wikiData[marker.wikiIndex];
+
+        if (info === undefined) {
+            info = 'Sorry, there isn\'t any data available for this location' +
+                ' at this time.';
+        }
+
         markerWindow.setContent(
-            '<div>' + marker.title + '</div>' +
+            '<div><b>' + marker.title + '</b></div>' +
             '<div>' + '<hr>' + '</div>' +
-            '<div>lat: ' + marker.position.lat + ', lon: ' +
-                marker.position.lon + '</div>' +
-            '<div>' + wikiData() + '</div>'
+            '<div>' + info + '</div>'
         );
         markerWindow.open(map, marker);
 
@@ -220,32 +238,39 @@ var initMap = function() {
 
     // Populate the map with markers for Points of Interest
     infoWindow = new google.maps.InfoWindow();
-    var latLon = {};
     var title = '';
     var marker = {};
 
     for (var i = 0, len = locations.length; i < len; ++i) {
-        latLon = locations[i].location;
         title = locations[i].title;
         marker = new google.maps.Marker({
-            position: latLon,
+            position: locations[i].location,
             map: map,
             title: title,
+            /**
+             * Animation MUST be initialized or markers will initially require
+             * two clicks before animating.
+             */
+            animation: google.maps.Animation.DROP,
         });
+
+        /**
+         * Keep track of the index for later when the Wikipedia AJAX completes.
+         * This was done since the closure below wouldn't cooperate.
+         */
+        marker.wikiIndex = i;
 
         getWikiData(i, title);
-        // marker.wikiInfo.push(wikiData()[i]);
-
 
         // Open an InfoWindow whenever the marker is clicked.
-        marker.addListener('click', function() {
-        // marker.addListener('click', (function(that, ndx, windowCpy) {
-            // populateInfoWindow(this, i, infoWindow);
+        // marker.addListener('click', (function(index) {
+        marker.addListener('click', (function() {
             populateInfoWindow(this, infoWindow);
+
             // Make marker bounce when selected
-            //FIXME: Doesn't bounce until secondary click.
             toggleBouncing(this);
-        });
+        }));
+        // })(i));
 
         // Add marker to Observable markers array
         markers.push(marker);
@@ -270,9 +295,11 @@ var initMap = function() {
     displayMarkers = function(markerArray) {
         var bounds = new google.maps.LatLngBounds();
 
-        // Extend the boundaries of the map for each marker
         for (var i = 0, len = markerArray.length; i < len; ++i) {
+            // Re-add the marker to the map
             markerArray[i].setMap(map);
+
+            // Ensure the marker will fit on the map by extending the boundary.
             bounds.extend(markerArray[i].position);
         }
 
