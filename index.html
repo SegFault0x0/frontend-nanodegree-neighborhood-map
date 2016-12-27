@@ -60,7 +60,7 @@
     <div id="map"></div>
     <div id="nav" class="menu">
       <div>
-        <input data-bind="textInput: searchName" id="filter" class="input" type="text" placeholder="Filter...">
+        <input data-bind="textInput: searchName, valueUpdate: afterkeydown" id="filter" class="input" type="text" placeholder="Filter...">
       </div>
       <ul data-bind="foreach: filteredList">
         <li data-bind="text: title, click: $parent.selectMarker"></li>
@@ -72,6 +72,5 @@
     <script async defer
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCP2HmhZf0KbJWXKQWOq73e05KBobxIiKM&v=3&callback=initMap">
     </script>
-
   </body>
 </html>

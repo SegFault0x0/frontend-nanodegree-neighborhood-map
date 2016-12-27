@@ -14,9 +14,10 @@
 
 var MENU_WIDTH = 300;
 
-var wikiElem;
+// Google variables
 var map;
 var infoWindow;
+var didGoogleAPILoad = false;
 
 var displayMarkers = function() {};
 var toggleBouncing = function() {};
@@ -80,10 +81,9 @@ var getWikiData = function(index, title) {
         jsonp: "callback",
     }).done((response) => {
         /**
-         * The third index of the array contains the information, and the best
-         * match on the search term is likely the first sub-index.
+         * The third index of the array (2) contains the information, and the
+         * best match on the search term is likely the first sub-index (0).
          */
-        console.log('response: ' + response);
         var wikiInfo = response[2][0];
 
         /**
@@ -93,7 +93,7 @@ var getWikiData = function(index, title) {
         wikiData[index] = wikiInfo;
     }).fail((err) => {
         console.log(err);
-        marker.wikiData[index] = 'No Wikipedia data available.';
+        wikiData[index] = 'No Wikipedia data available.';
     });
 };
 
@@ -177,7 +177,7 @@ var ViewModel = function() {
     this.openNav = function() {
         document.getElementById("nav").style.width = MENU_WIDTH + 'px';
         self.menuToggled = true;
-    }
+    };
 
     /**
      * Slides the navigation menu closed (left).
@@ -185,7 +185,7 @@ var ViewModel = function() {
     this.closeNav = function() {
         document.getElementById("nav").style.width = "0";
         self.menuToggled = false;
-    }
+    };
 };
 
 /**
@@ -219,10 +219,22 @@ var populateInfoWindow = function(marker, markerWindow) {
 };
 
 /**
+ * Handle instances where the map can't load due to a
+ * net::ERR_CONNECTION_REFUSED error.
+ */
+var googleLoadTimer = setInterval(function() {
+  if (!didGoogleAPILoad) {
+    alert('There was an error in loading the Google Maps API.  Please' +
+      ' check your Internet connection and try again.');
+  }
+  clearInterval(googleLoadTimer);
+}, 5000);
+
+/**
  * Creates the map, markers, and all basic map functionality
  */
 var initMap = function() {
-    var marker;
+    didGoogleAPILoad = true;
 
     // Create the map
     map = new google.maps.Map(document.getElementById('map'), {
