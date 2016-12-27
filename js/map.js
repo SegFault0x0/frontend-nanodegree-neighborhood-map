@@ -10,7 +10,12 @@ var displayMarkers = function() {};
 var toggleBouncing = function() {};
 
 /*** MODEL DATA ***/
-var markers = ko.observableArray([]);
+var markers = ko.observableArray();
+
+// Keep track of the Wikipedia data when it arrives
+var wikiData = ko.observableArray();
+
+
 var locations = [
     {
         title: 'Park Avenue',
@@ -18,6 +23,7 @@ var locations = [
             lat: 40.7713024,
             lng: -73.9632393
         },
+        wikiInfo: ko.observable(''),
     },
     {
         title: 'Starbucks',
@@ -25,6 +31,7 @@ var locations = [
             lat: 40.7444883,
             lng: -73.9949465
         },
+        wikiInfo: ko.observable(''),
     },
     {
         title: 'East Village Hip Studio',
@@ -32,6 +39,7 @@ var locations = [
             lat: 40.7281777,
             lng: -73.984377
         },
+        wikiInfo: ko.observable(''),
     },
     {
         title: 'TriBeCa Artsy Bachelor Pad',
@@ -39,6 +47,7 @@ var locations = [
             lat: 40.7195264,
             lng: -74.0089934
         },
+        wikiInfo: ko.observable(''),
     },
     {
         title: 'Starry Night Pavilion',
@@ -46,8 +55,42 @@ var locations = [
             lat: 40.7347062,
             lng: -73.9895759
         },
+        wikiInfo: ko.observable(''),
     },
 ];
+
+// Initialize wikiData
+for (var i = 0, len = locations.length; i < len; ++i) {
+    wikiData.push({wikiInfo: ''});
+}
+
+/**
+ * Retrieves a tidbit of general information about a location from Wikipedia.
+ */
+var getWikiData = function(index, title) {
+    var wikiUrl = 'https://en.wikipedia.org/w/api.php?action=opensearch&' +
+        'search=' + title + '&format=json&callback=wikiCallback';
+
+    // Grab Wikipedia data
+    $.ajax({
+        url: wikiUrl,
+        dataType: "jsonp",
+        jsonp: "callback",
+    }).done((response) => {
+        /**
+         * The third index of the array contains the information, and the best
+         * match on the search term is likely the first sub-index.
+         */
+        var wikiInfo = response[2][0];
+
+        // Update the current marker's Wikipedia information
+        wikiData.splice(index, 0, wikiInfo);
+        console.log(wikiData()[index]);
+    }).fail((err) => {
+        console.log(err);
+        marker.wikiData() = 'No Wikipedia data available.';
+    });
+};
 
 /**
  * Serves as KnockoutJS's `Controller`.
@@ -68,14 +111,11 @@ var ViewModel = function() {
     // Keep track of menu toggle status
     this.menuToggled = ko.observable(true);
 
-    // Keep track of the selected marker
-    this.currentMarker = ko.observable(this.places()[0]);
 
     // Create function to engage the marker
     this.selectMarker = function(clickedMarker) {
-        self.currentMarker(clickedMarker);
-        toggleBouncing(self.currentMarker());
-        populateInfoWindow(self.currentMarker(), infoWindow);
+        toggleBouncing(clickedMarker);
+        populateInfoWindow(clickedMarker, infoWindow);
     };
 
     /**
@@ -136,34 +176,6 @@ var ViewModel = function() {
 };
 
 /**
- * Retrieves a tidbit of general information about a location from Wikipedia.
- * @return {String} Wiki information.
- */
-var getWikiData = function(place) {
-    var wikiUrl = 'https://en.wikipedia.org/w/api.php?action=opensearch&' +
-        'search=' + place + '&format=json&callback=wikiCallback';
-
-    // Grab Wikipedia data
-    $.ajax({
-        url: wikiUrl,
-        dataType: "jsonp",
-        jsonp: "callback",
-    }).done((response) => {
-        /**
-         * The third index of the array contains the information, and the best
-         * match on the search term is likely the first sub-index.
-         */
-        var wikiInfo = response[2][0];
-        console.log(wikiInfo);
-
-        return (wikiInfo);
-    }).fail((err) => {
-        console.log(err);
-        return ('No Wikipedia data available.')
-    });
-};
-
-/**
  * Populates data for an InfoWindow.
  * @param {google.maps.Marker} marker
  * @param {google.maps.InfoWindow} markerWindow
@@ -175,7 +187,9 @@ var populateInfoWindow = function(marker, markerWindow) {
         markerWindow.setContent(
             '<div>' + marker.title + '</div>' +
             '<div>' + '<hr>' + '</div>' +
-            '<div>' + marker.data + '</div>'
+            '<div>lat: ' + marker.position.lat + ', lon: ' +
+                marker.position.lon + '</div>' +
+            '<div>' + wikiData() + '</div>'
         );
         markerWindow.open(map, marker);
 
@@ -185,7 +199,6 @@ var populateInfoWindow = function(marker, markerWindow) {
         });
     }
 };
-
 
 /**
  * Creates the map, markers, and all basic map functionality
@@ -220,10 +233,14 @@ var initMap = function() {
             title: title,
         });
 
-        marker.data = getWikiData(title);
+        getWikiData(i, title);
+        // marker.wikiInfo.push(wikiData()[i]);
+
 
         // Open an InfoWindow whenever the marker is clicked.
         marker.addListener('click', function() {
+        // marker.addListener('click', (function(that, ndx, windowCpy) {
+            // populateInfoWindow(this, i, infoWindow);
             populateInfoWindow(this, infoWindow);
             // Make marker bounce when selected
             //FIXME: Doesn't bounce until secondary click.
