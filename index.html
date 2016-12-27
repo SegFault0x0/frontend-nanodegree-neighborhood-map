@@ -16,7 +16,15 @@
     </style>
   </head>
   <body>
-    <ul data-bind="foreach: places">
+    <div class="header">
+
+    </div>
+    <div>
+      <input data-bind="textInput: searchName" type="text" placeholder="Filter...">
+      <!-- <input data-bind="text: filter" type="text" placeholder="Filter..."> -->
+    </div>
+    <!-- <ul data-bind="foreach: places"> -->
+    <ul data-bind="foreach: filteredList">
       <li data-bind="text: title, click: $parent.selectMarker"></li>
     </ul>
     <div id="map"></div>

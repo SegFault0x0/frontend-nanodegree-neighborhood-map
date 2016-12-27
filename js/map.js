@@ -21,13 +21,6 @@ var locations = [
         },
     },
     {
-        title: 'Union Square Open Floor Plan',
-        location: {
-            lat: 40.7347062,
-            lng: -73.9895759
-        },
-    },
-    {
         title: 'East Village Hip Studio',
         location: {
             lat: 40.7281777,
@@ -41,7 +34,27 @@ var locations = [
             lng: -74.0089934
         },
     },
+    {
+        title: 'Starry Night Pavilion',
+        location: {
+            lat: 40.7347062,
+            lng: -73.9895759
+        },
+    },
 ];
+
+/**
+ * Iterates through the marker array and returns an array of the location titles.
+ * @param {google.maps.Marker} markerArray
+ * @return {String[]} array
+ */
+// var getMarkerNames = function(markerArray) {
+//     var array = [];
+//     for (var i = 0, len = markerArray.length; i < len; ++i) {
+//         array.push(markerArray[i].title);
+//     }
+//     return array;
+// };
 
 /**
  * Serves as KnockoutJS's `Controller`.
@@ -54,8 +67,10 @@ var ViewModel = function() {
     var self = this;
 
     // Create the array of locations
-    // this.places = ko.observableArray([]);
     this.places = markers;
+
+    // Create an array of marker titles
+    // this.titles = [];
 
     // Keep track of the selected marker
     this.currentMarker = ko.observable(this.places()[0]);
@@ -65,8 +80,43 @@ var ViewModel = function() {
         self.currentMarker(clickedMarker);
         toggleBouncing(self.currentMarker());
         populateInfoWindow(self.currentMarker(), infoWindow);
-        console.log('current Marker: ' + self.currentMarker().title);
     };
+
+    /**
+     * Returns an array filtered based upon whatever condition is tested for in
+     * the callback.
+     * @param {Array} array
+     * @param {Function} callback
+     * @return {Array} filteredArray
+     */
+    this.arrayFilter = function(array, callback) {
+        var filteredArray = [];
+        for (var i = 0, len = array.length; i < len; ++i) {
+            if (callback(array[i])) {
+                filteredArray.push(array[i]);
+            }
+        }
+        return filteredArray;
+    };
+
+    // Create a two-way binding for the search feature
+    this.searchName = ko.observable('');
+
+    this.filteredList = ko.computed(function() {
+        var filteredList = [];
+        var filter = self.searchName().toLowerCase();
+        // self.titles = getMarkerNames(self.places());
+
+        if (!filter) {
+            return self.places();
+        } else {
+            return (
+                self.arrayFilter(self.places(), function(marker) {
+                    return marker.title.toLowerCase().startsWith(filter);
+                })
+            );
+        }
+    }, this);
 };
 
 
