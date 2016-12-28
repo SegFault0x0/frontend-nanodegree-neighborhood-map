@@ -12,12 +12,15 @@
  * (https://www.mediawiki.org/wiki/API:Main_page).
  */
 
+// Width in pixels of the sliding menu
 var MENU_WIDTH = 300;
+
+// Number of times a marker shoud bounce when clicked.
+var NUM_OF_BOUNCES = 2;
 
 // Google variables
 var map;
 var infoWindow;
-var didGoogleAPILoad = false;
 
 var displayMarkers = function() {};
 var toggleBouncing = function() {};
@@ -69,10 +72,13 @@ var locations = [
 
 /**
  * Retrieves a tidbit of general information about a location from Wikipedia.
+ * @param {int} index
+ * @param {String} title
  */
 var getWikiData = function(index, title) {
     var wikiUrl = 'https://en.wikipedia.org/w/api.php?action=opensearch&' +
         'search=' + title + '&format=json&callback=wikiCallback';
+    var failMsg = 'No Wikipedia data available.';
 
     // Grab Wikipedia data
     $.ajax({
@@ -91,9 +97,9 @@ var getWikiData = function(index, title) {
          * marker's Wikipedia information.
          */
         wikiData[index] = wikiInfo;
-    }).fail((err) => {
-        console.log(err);
-        wikiData[index] = 'No Wikipedia data available.';
+    }).fail(() => {
+        console.log(failMsg);
+        wikiData[index] = failMsg;
     });
 };
 
@@ -207,7 +213,7 @@ var populateInfoWindow = function(marker, markerWindow) {
         markerWindow.setContent(
             '<div><b>' + marker.title + '</b></div>' +
             '<div>' + '<hr>' + '</div>' +
-            '<div>' + info + '</div>'
+            '<div>' + info + ' (Source: Wikipedia)' + '</div>'
         );
         markerWindow.open(map, marker);
 
@@ -222,20 +228,15 @@ var populateInfoWindow = function(marker, markerWindow) {
  * Handle instances where the map can't load due to a
  * net::ERR_CONNECTION_REFUSED error.
  */
-var googleLoadTimer = setInterval(function() {
-  if (!didGoogleAPILoad) {
-    alert('There was an error in loading the Google Maps API.  Please' +
-      ' check your Internet connection and try again.');
-  }
-  clearInterval(googleLoadTimer);
-}, 5000);
+var googleAPIFailed = function() {
+    alert('There was an error in loading the Google Maps API.  Please check' +
+        ' your Internet connection and try again.');
+};
 
 /**
  * Creates the map, markers, and all basic map functionality
  */
 var initMap = function() {
-    didGoogleAPILoad = true;
-
     // Create the map
     map = new google.maps.Map(document.getElementById('map'), {
         center: {
@@ -275,14 +276,12 @@ var initMap = function() {
         getWikiData(i, title);
 
         // Open an InfoWindow whenever the marker is clicked.
-        // marker.addListener('click', (function(index) {
-        marker.addListener('click', (function() {
+        marker.addListener('click', function() {
             populateInfoWindow(this, infoWindow);
 
             // Make marker bounce when selected
             toggleBouncing(this);
-        }));
-        // })(i));
+        });
 
         // Add marker to Observable markers array
         markers.push(marker);
@@ -293,11 +292,14 @@ var initMap = function() {
      * @param {google.maps.Marker} marker
      */
     toggleBouncing = function(marker) {
-        if (marker.getAnimation() !== null) {
+        marker.setAnimation(google.maps.Animation.BOUNCE);
+
+        // Stop the animation after a certain number of bounces
+        // Attr: 700ms "perfect-bounce" recommended by Udacity reviewer!
+        var bounceTime = NUM_OF_BOUNCES * 700;
+        setTimeout(() => {
             marker.setAnimation(null);
-        } else {
-            marker.setAnimation(google.maps.Animation.BOUNCE);
-        }
+        }, bounceTime);
     };
 
     /**

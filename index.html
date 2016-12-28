@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Udacity Map</title>
     <style>
       .header {
@@ -34,7 +36,7 @@
         transition: 0.3s;
       }
 
-      .menu li:hover, .offcanvas li:focus{
+      .menu li:hover {
         color: #f1f1f1;
       }
 
@@ -60,7 +62,7 @@
     <div id="map"></div>
     <div id="nav" class="menu">
       <div>
-        <input data-bind="textInput: searchName, valueUpdate: afterkeydown" id="filter" class="input" type="text" placeholder="Filter...">
+        <input data-bind="textInput: searchName" id="filter" class="input" type="text" placeholder="Filter...">
       </div>
       <ul data-bind="foreach: filteredList">
         <li data-bind="text: title, click: $parent.selectMarker"></li>
@@ -69,7 +71,7 @@
     <script src="js/lib/jquery-2.2.4.min.js"></script>
     <script src="js/lib/knockout-3.4.1.js"></script>
     <script src="js/map.js"></script>
-    <script async defer
+    <script async defer onerror="googleAPIFailed()"
         src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCP2HmhZf0KbJWXKQWOq73e05KBobxIiKM&v=3&callback=initMap">
     </script>
   </body>

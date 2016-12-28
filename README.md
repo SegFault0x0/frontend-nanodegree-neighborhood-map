@@ -19,8 +19,6 @@ a Google [Info Window](https://developers.google.com/maps/documentation/javascri
 Clicking on an item in the list (located at the left of the screen) will render
 the same results.
 
->Note: Click the list item or marker a second time to end the animation.
-
 ### Filtering
 Click in the "Filter..." text box, start typing the name of one of the items in
 the list, and watch the markers disappear!  Markers are dynamically filtered on
